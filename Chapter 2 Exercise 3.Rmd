@@ -1,0 +1,47 @@
+---
+title: "Chapter 2 Exercise 3"
+author: "Joel"
+date: "18/09/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#Read libraries
+library(readxl)
+library(tsibble)
+library(tsibbledata)
+library(magrittr)
+library(tidyverse)
+library(fpp3)
+```
+
+1. Look at the quarterly tourism data for the Snowy Mountains
+Use autoplot(), gg_season() and gg_subseries() to explore the data.
+```{r}
+snowy <- tourism %>% filter(Region == "Snowy Mountains")
+```
+
+
+```{r}
+snowy %>% mutate(Quarter = yearquarter(Quarter)) %>% as_tsibble(index = Quarter, key = c(Region, Purpose)) ->snowy_ts
+snowy_ts %>%    autoplot(Trips)
+```
+1. The overnight trip for holidays are maximum and there is an approx 5 year cycle when it falls and then rises. Similar cyclicalness is not seen for the other purposes. There weren't many trip in 2007 which may be due to local conditions/reasons.
+```{r}
+help("tourism")
+```
+
+
+```{r}
+snowy_ts %>%  gg_season(Trips)
+```
+2. Trips during holidays always peak in Q3 - most probably, bcos the school/college holidays happen in Q3
+3. There are one odd aberrations in the other purposes, but no specific pattern emerges.
+```{r}
+snowy_ts %>%  gg_subseries(Trips)
+```
+4. The above graph corroborates the sudden rise in numbers of overnight stays in Q3.

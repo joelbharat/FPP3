@@ -1,0 +1,52 @@
+---
+title: "Chapter2 Exercise 4"
+author: "Joel"
+date: "23/09/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#Read libraries
+library(readxl)
+library(tsibble)
+library(tsibbledata)
+library(magrittr)
+library(tidyverse)
+library(fpp3)
+```
+
+We have introduced the following functions: gg_lag and ACF
+Use these functions to explore the following time series: Bricks from aus_production
+```{r}
+aus_production %>% gg_lag(Bricks, geom='point')
+aus_production %>% ACF(Bricks, lag_max = 100) %>% autoplot()
+```
+There is seasonality of 4 periods. The trend is reducing which levels out after about 80 periods. There are no cycles.
+
+
+Use these functions to explore the following time series: Lynx from pelt
+```{r}
+pelt %>% gg_lag(Lynx, geom='point')
+pelt %>% ACF(Lynx, lag_max = 100) %>% autoplot()
+pelt %>% autoplot(Lynx)
+```
+Trend rises initially and the  decreases. Seasonality is regular at 9 periods. Ther dont seem to be any cycles.
+
+Use these functions to explore the following time series: Victorian Electricity Demand from aus_elec
+```{r}
+vic_elec %>% gg_lag(Demand, geom='point')
+vic_elec %>% ACF(Demand, lag_max = 100) %>% autoplot()
+vic_elec %>% autoplot(Demand)
+```
+Trend is a mild rising trend as the demand of electricity rises every year. Seasonality is evident because of more requirement of electricity during summer and winters. Minor cyclical variations will be present.
+
+WHich is which?
+1-B, 2-A, 3-D, 4-C
+```{r}
+
+```
+

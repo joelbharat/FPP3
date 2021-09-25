@@ -1,0 +1,37 @@
+---
+title: "Chapter 2 Exercise 5"
+author: "Joel"
+date: "23/09/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#Read libraries
+library(readxl)
+library(tsibble)
+library(tsibbledata)
+library(magrittr)
+library(tidyverse)
+library(fpp3)
+```
+
+You can compute the daily changes in the Google stock price in 2018 using
+```{r}
+dgoog <- gafa_stock %>%
+filter(Symbol == "GOOG", year(Date) >= 2018) %>%
+mutate(trading_day = row_number()) %>%
+update_tsibble(index=trading_day, regular=TRUE) %>%
+mutate(diff = difference(Close))
+```
+Does diff look like white noise?
+
+```{r}
+dgoog %>% autoplot(diff)
+dgoog %>% gg_lag(diff, geom='point')
+dgoog %>% ACF(diff, lag_max = 100) %>% autoplot()
+```
+The dispersion of data seems totally random and unpredictable. There is no pattern in the ACF plot. The lag plot looks all the same for all the lags. There is no pattern in its variation. The autoplot visual does not reveal any seasonality. There is no trend as well. Cyclical patterns are random. diff looks like white noise.

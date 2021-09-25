@@ -1,0 +1,48 @@
+---
+title: "Chapter 2 Task 1"
+author: "Joel"
+date: "18/09/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+#Read libraries
+library(readxl)
+library(tsibble)
+library(tsibbledata)
+library(magrittr)
+library(tidyverse)
+library(fpp3)
+```
+
+
+1. Download tourism.xlsx from http://robjhyndman.com/data/tourism.xlsx, and read it into R using read_excel() from the readxl package.
+```{r}
+tourism <- read_excel("C:\\MSc (BDA)\\BD3P5 Econometrics lab  - Akhileshwar\\tourism.xlsx")
+```
+
+2. Create a tsibble which is identical to the tourism tsibble from the tsibble package.
+```{r}
+data(package = "fpp3")$results[, "Item"]
+```
+
+3. Find what combination of Region and Purpose had the maximum number of overnight trips on average.
+
+```{r}
+tourism %>% group_by(Region, Purpose) %>% summarise(total_trips = sum(Trips)/n()) %>% arrange(desc(total_trips)) %>% head(1)
+```
+
+4.Create a new tsibble which combines the Purposes and Regions, and just has total trips by State. 
+```{r}
+tourism %>%  mutate(Quarter = yearquarter(Quarter)) %>% as_tsibble(index = Quarter, key = c(Region, Purpose))  %>% select (-Quarter) %>% group_by(State) %>% summarise(sum(Trips))
+```
+```{r}
+tourism %>%  select (-Quarter) %>% group_by(State) %>% summarise(sum(Trips))
+ 
+```
+
