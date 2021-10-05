@@ -1,0 +1,481 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+#Read libraries
+library(readxl)
+library(tsibble)
+library(tsibbledata)
+library(magrittr)
+library(tidyverse)
+library(fpp3)
+```
+
+1.    Use the help function to explore what the series gafa_stock, PBS, vic_elec and pelt represent.
+    (a)   Use autoplot() to plot some of the series in these data sets.
+    (b)   What is the time interval of each series?
+```{r}
+help(gafa_stock)
+```
+
+gafa_stock {tsibbledata}	R Documentation
+GAFA stock prices
+Description
+Historical stock prices from 2014-2018 for Google, Amazon, Facebook and Apple. All prices are in $USD.
+
+Format
+Time series of class tsibble
+
+Details
+gafa_stock is a tsibble containing data on irregular trading days:
+
+Open:	The opening price for the stock.
+High:	The stock's highest trading price.
+Low:	The stock's lowest trading price.
+Close:	The closing price for the stock.
+Adj_Close:	The adjusted closing price for the stock.
+Volume:	The amount of stock traded.
+Each stock is uniquely identified by one key:
+
+Symbol:	The ticker symbol for the stock.
+Source
+Yahoo Finance historical data, https://finance.yahoo.com/
+
+Examples
+library(tsibble)
+gafa_stock
+
+```{r}
+help(PBS)
+```
+
+PBS {tsibbledata}	R Documentation
+Monthly Medicare Australia prescription data
+Description
+PBS is a monthly tsibble with two values:
+
+Scripts:	Total number of scripts
+Cost:	Cost of the scripts in $AUD
+Format
+Time series of class tsibble
+
+Details
+The data is disaggregated using four keys:
+
+Concession:	Concessional scripts are given to pensioners, unemployed, dependents, and other card holders
+Type:	Co-payments are made until an individual's script expenditure hits a threshold ($290.00 for concession, $1141.80 otherwise). Safety net subsidies are provided to individuals exceeding this amount.
+ATC1:	Anatomical Therapeutic Chemical index (level 1)
+ATC2:	Anatomical Therapeutic Chemical index (level 2)
+Source
+Medicare Australia
+
+Examples
+library(tsibble)
+PBS
+
+```{r}
+help(vic_elec)
+```
+
+vic_elec {tsibbledata}	R Documentation
+Half-hourly electricity demand for Victoria, Australia
+Description
+vic_elec is a half-hourly tsibble with three values:
+
+Demand:	Total electricity demand in MW.
+Temperature:	Temperature of Melbourne (BOM site 086071).
+Holiday:	Indicator for if that day is a public holiday.
+Format
+Time series of class tsibble.
+
+Details
+This data is for operational demand, which is the demand met by local scheduled generating units, semi-scheduled generating units, and non-scheduled intermittent generating units of aggregate capacity larger than 30 MW, and by generation imports to the region. The operational demand excludes the demand met by non-scheduled non-intermittent generating units, non-scheduled intermittent generating units of aggregate capacity smaller than 30 MW, exempt generation (e.g. rooftop solar, gas tri-generation, very small wind farms, etc), and demand of local scheduled loads. It also excludes some very large industrial users (such as mines or smelters).
+
+Source
+Australian Energy Market Operator.
+
+Examples
+library(tsibble)
+vic_elec
+
+```{r}
+help(pelt)
+```
+
+pelt {tsibbledata}	R Documentation
+Pelt trading records
+Description
+Hudson Bay Company trading records for Snowshoe Hare and Canadian Lynx furs from 1845 to 1935. This data contains trade records for all areas of the company.
+
+Format
+Time series of class tsibble
+
+Details
+pelt is an annual tsibble with two values:
+
+Hare:	The number of Snowshoe Hare pelts traded.
+Lynx:	The number of Canadian Lynx pelts traded.
+Source
+Hudson Bay Company
+
+Examples
+library(tsibble)
+pelt
+
+(a)  Use autoplot() to plot some of the series in these data sets.
+```{r}
+#PBS
+PBS %>% autoplot(Cost)
+```
+```{r}
+gafa_stock %>% filter(Symbol=="GOOG") %>% autoplot(Close)
+```
+
+```{r}
+vic_elec %>% autoplot(Demand)
+```
+
+```{r}
+pelt %>% autoplot(Hare)
+```
+
+
+(b)   Time interval of  gafa_stock -    daily except weekends
+                        PBS        -    Monthly
+                        vic_elec   -    30 mins
+                        pelt       -    1 yr
+                        
+                        
+                        
+2.    Use filter() to find what days corresponded to the peak closing price for each of the four stocks in gafa_stock.
+```{r}
+gafa_stock %>% filter(Symbol=="GOOG") %>% arrange(desc(Close)) %>% head(1)
+gafa_stock %>% filter(Symbol=="FB") %>% arrange(desc(Close)) %>% head(1)
+gafa_stock %>% filter(Symbol=="AMZN") %>% arrange(desc(Close)) %>% head(1)
+gafa_stock %>% filter(Symbol=="AAPL") %>% arrange(desc(Close)) %>% head(1)
+```
+
+
+3.    Download the file tute1.csv from the book website, open it in Excel (or some other spreadsheet application), and review its contents. You should find four columns of information. Columns B through D each contain a quarterly series, labelled Sales, AdBudget and GDP. Sales contains the quarterly sales for a small company over the period 1981-2005. AdBudget is the advertising budget and GDP is the gross domestic product. All series have been adjusted for inflation.
+
+You can read the data into R with the following script
+```{r}
+tute1 <- readr::read_csv("tute1.csv")
+View(tute1)
+```
+
+Convert the data to time series
+```{r}
+mytimeseries <- tute1 %>%
+  mutate(Quarter = yearmonth(Quarter)) %>%
+  as_tsibble(index = Quarter)
+```
+Construct time series plots of each of the three series
+```{r}
+mytimeseries %>%
+  pivot_longer(-Quarter) %>%
+  ggplot(aes(x = Quarter, y = value, colour = name)) +
+  geom_line() +
+  facet_grid(name ~ ., scales = "free_y")
+```
+
+Check what happens when you don’t include facet_grid().
+```{r}
+mytimeseries %>%
+  pivot_longer(-Quarter) %>%
+  ggplot(aes(x = Quarter, y = value, colour = name)) +
+  geom_line()
+```
+
+4.    The USgas package contains data on the demand for natural gas in the US.
+
+      (a)   Install the USgas package.
+```{r}
+#install.packages("USgas")
+# Installed once. Need not install again and again.
+```
+      
+      
+      (b)   Create a tsibble from us_total with year as the index and state as the key.
+```{r}
+library(USgas)
+us_total %>% as_tsibble(key = state, index = year) -> us_tot_ts
+head(us_tot_ts)
+```
+      
+      (c)   Plot the annual natural gas consumption by state for the New England area (comprising the states of Maine, Vermont, New Hampshire, Massachusetts, Connecticut and Rhode Island).
+```{r}
+us_tot_ts %>% filter(state==c("Maine", "Vermont", "New Hampshire", "Massachusetts", "Connecticut", "Rhode Island")) %>% autoplot()
+```
+  
+5.  (a)   Download tourism.xlsx from the book website and read it into R using readxl::read_excel().
+    (b)   Create a tsibble which is identical to the tourism tsibble from the tsibble package.
+    (c)   Find what combination of Region and Purpose had the maximum number of overnight trips on average.
+    (d)   Create a new tsibble which combines the Purposes and Regions, and just has total trips by State.
+    
+    (a)   Download tourism.xlsx from the book website and read it into R using readxl::read_excel().
+```{r}
+readxl::read_excel("tourism.xlsx") -> trsm
+```
+    
+    (b)   Create a tsibble which is identical to the tourism tsibble from the tsibble package.
+```{r}
+trsm %>% mutate(Quarter = yearquarter(Quarter))  %>% as_tsibble(key = c(Region, State, Purpose), index = Quarter) -> trsm_ts
+```
+
+    (c)   Find what combination of Region and Purpose had the maximum number of overnight trips on average.
+```{r}
+trsm_ts %>% group_by(Region, Purpose) %>% summarise(total_trips = sum(Trips)/n()) %>% arrange(desc(total_trips)) %>% head(1)
+```
+    
+    (d)   Create a new tsibble which combines the Purposes and Regions, and just has total trips by State.
+```{r}
+#trsm %>%  select (-Quarter) %>% group_by(State) %>% summarise(sum(Trips))
+trsm %>%  mutate(Quarter = yearquarter(Quarter))  %>% as_tsibble(key = c(Region, Purpose), index = Quarter) %>% group_by(State) %>% summarise(sum(Trips)) 
+```
+    
+6.    Create time plots of the following four time series: Bricks from aus_production, Lynx from pelt, Close from gafa_stock, Demand from vic_elec.
+
+  -   Use ? (or help()) to find out about the data in each series.
+  -   For the last plot, modify the axis labels and title.
+```{r}
+aus_production %>% autoplot(Bricks)
+pelt %>% autoplot(Lynx)
+gafa_stock %>% autoplot(Close)
+vic_elec %>% autoplot(Demand)
+```
+  
+  -   Use ? (or help()) to find out about the data in each series.
+```{r}
+help("aus_production")
+```
+Quarterly production of selected commodities in Australia.
+Description
+Quarterly estimates of selected indicators of manufacturing production in Australia.
+
+Format
+Time series of class tsibble.
+
+Details
+aus_production is a half-hourly tsibble with six values:
+
+Beer:	Beer production in megalitres.
+Tobacco:	Tobacco and cigarette production in tonnes.
+Bricks:	Clay brick production in millions of bricks.
+Cement:	Portland cement production in thousands of tonnes.
+Electricity:	Electricity production in gigawatt hours.
+Gas:	Gas production in petajoules.
+Source
+Australian Bureau of Statistics, catalogue number 8301.0.55.001 table 1.
+
+Examples
+library(tsibble)
+aus_production
+
+```{r}
+help("pelt")
+```
+Pelt trading records
+Description
+Hudson Bay Company trading records for Snowshoe Hare and Canadian Lynx furs from 1845 to 1935. This data contains trade records for all areas of the company.
+
+Format
+Time series of class tsibble
+
+Details
+pelt is an annual tsibble with two values:
+
+Hare:	The number of Snowshoe Hare pelts traded.
+Lynx:	The number of Canadian Lynx pelts traded.
+Source
+Hudson Bay Company
+
+Examples
+library(tsibble)
+pelt
+
+```{r}
+help("gafa_stock")
+```
+GAFA stock prices
+Description
+Historical stock prices from 2014-2018 for Google, Amazon, Facebook and Apple. All prices are in $USD.
+
+Format
+Time series of class tsibble
+
+Details
+gafa_stock is a tsibble containing data on irregular trading days:
+
+Open:	The opening price for the stock.
+High:	The stock's highest trading price.
+Low:	The stock's lowest trading price.
+Close:	The closing price for the stock.
+Adj_Close:	The adjusted closing price for the stock.
+Volume:	The amount of stock traded.
+Each stock is uniquely identified by one key:
+
+Symbol:	The ticker symbol for the stock.
+Source
+Yahoo Finance historical data, https://finance.yahoo.com/
+
+Examples
+library(tsibble)
+gafa_stock
+
+```{r}
+help("vic_elec")
+```
+Half-hourly electricity demand for Victoria, Australia
+Description
+vic_elec is a half-hourly tsibble with three values:
+
+Demand:	Total electricity demand in MW.
+Temperature:	Temperature of Melbourne (BOM site 086071).
+Holiday:	Indicator for if that day is a public holiday.
+Format
+Time series of class tsibble.
+
+Details
+This data is for operational demand, which is the demand met by local scheduled generating units, semi-scheduled generating units, and non-scheduled intermittent generating units of aggregate capacity larger than 30 MW, and by generation imports to the region. The operational demand excludes the demand met by non-scheduled non-intermittent generating units, non-scheduled intermittent generating units of aggregate capacity smaller than 30 MW, exempt generation (e.g. rooftop solar, gas tri-generation, very small wind farms, etc), and demand of local scheduled loads. It also excludes some very large industrial users (such as mines or smelters).
+
+Source
+Australian Energy Market Operator.
+
+Examples
+library(tsibble)
+vic_elec
+
+3. For the last plot, modify the axis labels and title.
+```{r}
+vic_elec %>% autoplot(Demand) + labs(x="Time Base", y="Electricity Demend", title="Victoria Electricity Demand Record")
+```
+  
+7.  The aus_arrivals data set comprises quarterly international arrivals to Australia from Japan, New Zealand, UK and the US.
+
+  -   Use autoplot(), gg_season() and gg_subseries() to compare the differences between the arrivals from these four countries.
+  -   Can you identify any unusual observations?
+
+```{r}
+aus_arrivals %>% autoplot(Arrivals)
+aus_arrivals %>% gg_season(Arrivals)
+aus_arrivals %>% gg_subseries(Arrivals)
+```
+1. Flights from Japan declined progressively from about 1997. FLights from US and UK after rising till 2000-2002 stagnated thereafter. The no of flights from NZ, however, continued to rise.
+2. FLights from UK dip in Q2 and 3 significantly, while the dip is minor for flights from US. But the flights from UK and US were high at the beginning of Q1 and end of Q4. The flights from NZ rose in Q1 and Q2 and thereafter mostly maintained steady till the end of the year.
+
+8.    Monthly Australian retail data is provided in aus_retail. Select one of the time series as follows (but choose your own seed value):
+```{r}
+set.seed(3456)
+myseries <- aus_retail %>%
+  filter(`Series ID` == sample(aus_retail$`Series ID`,1))
+```
+
+Explore your chosen retail time series using the following functions:
+
+autoplot(), gg_season(), gg_subseries(), gg_lag(),
+
+ACF() %>% autoplot()
+
+Can you spot any seasonality, cyclicity and trend? What do you learn about the series?
+
+```{r}
+myseries %>% autoplot(Turnover)
+myseries %>% gg_season(Turnover)
+myseries %>% gg_subseries(Turnover)
+myseries %>% gg_lag(Turnover)
+myseries %>% ACF(Turnover) %>% autoplot()
+```
+There is trend and seasonality. Cyclicity does not seem to be significant.
+
+9.    Use the following graphics functions: autoplot(), gg_season(), gg_subseries(), gg_lag(), ACF() and explore features from the following time series: “Total Private” Employed from us_employment, Bricks from aus_production, Hare from pelt, “H02” Cost from PBS, and us_gasoline.
+
+-   Can you spot any seasonality, cyclicity and trend?
+-   What do you learn about the series?
+-   What can you say about the seasonal patterns?
+-   Can you identify any unusual years?
+
+Employed from us_employment
+```{r}
+us_employment %>% autoplot(Employed)
+us_employment %>% gg_season(Employed)
+us_employment %>% gg_subseries(Employed)
+#us_employment %>% gg_lag(Employed)
+us_employment %>% ACF(Employed) %>% autoplot()
+
+```
+
+Bricks from aus_production
+```{r}
+aus_production %>% autoplot(Bricks)
+aus_production %>% gg_season(Bricks)
+aus_production %>% gg_subseries(Bricks)
+aus_production %>% gg_lag(Bricks)
+aus_production %>% ACF(Bricks) %>% autoplot()
+```
+
+Hare from pelt
+```{r}
+pelt %>% autoplot(Hare)
+#pelt %>% gg_season(Hare)
+pelt %>% gg_subseries(Hare)
+pelt %>% gg_lag(Hare)
+pelt %>% ACF(Hare) %>% autoplot()
+```
+
+Cost from PBS
+```{r}
+PBS %>% autoplot(Cost)
+PBS %>% gg_season(Cost)
+PBS %>% gg_subseries(Cost)
+#PBS %>% gg_lag(Cost)
+PBS %>% ACF(Cost) %>% autoplot()
+```
+
+
+us_gasoline
+```{r}
+us_gasoline %>% autoplot(Barrels)
+us_gasoline %>% gg_season(Barrels)
+us_gasoline %>% gg_subseries(Barrels)
+us_gasoline %>% gg_lag(Barrels)
+us_gasoline %>% ACF(Barrels) %>% autoplot()
+```
+
+10.   The following time plots and ACF plots correspond to four different time series. Your task is to match each time plot in the first row with one of the ACF plots in the second row.
+
+1-B, 2-A, 3-D, 4-C
+
+11.   The aus_livestock data contains the monthly total number of pigs slaughtered in Victoria, Australia, from Jul 1972 to Dec 2018. Use filter() to extract pig slaughters in Victoria between 1990 and 1995. Use autoplot() and ACF() for this data. How do they differ from white noise? If a longer period of data is used, what difference does it make to the ACF?
+
+```{r}
+aus_livestock %>% separate(Month, c("year", "month"), sep=" ") %>% filter (year>= 1990 & year <=1995) %>% unite(Month, year, month, sep = " ") %>% mutate(Month = yearmonth(Month)) %>% as_tsibble(key=c(Animal, State), index=Month) -> aus
+aus %>% autoplot(Count)
+aus %>% ACF(Count) %>% autoplot()
+```
+
+12.   (a)   Use the following code to compute the daily changes in Google closing stock prices.
+```{r}
+dgoog <- gafa_stock %>%
+  filter(Symbol == "GOOG", year(Date) >= 2018) %>%
+  mutate(trading_day = row_number()) %>%
+  update_tsibble(index = trading_day, regular = TRUE) %>%
+  mutate(diff = difference(Close))
+```
+
+      (b)   Why was it necessary to re-index the tsibble?
+      To make the indexes at uniform spacing.
+
+      (c)   Plot these differences and their ACF.
+```{r}
+autoplot(dgoog, diff)
+ACF(dgoog, diff) %>% autoplot()
+```
+      
+
+      (d)   Do the changes in the stock prices look like white noise?
+      To a large extent, the chnages in stock prices look like white noise.
+      
+      
