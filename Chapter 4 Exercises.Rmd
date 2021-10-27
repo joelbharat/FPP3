@@ -1,0 +1,96 @@
+---
+title: "Chapter 4 Exercises"
+author: "Joel"
+date: "22/10/2021"
+output: html_document
+---
+
+```{r}
+#Read libraries
+library(readxl)
+library(tsibble)
+library(tsibbledata)
+library(magrittr)
+library(GGally)
+library(ggplot2)
+library(tidyverse)
+library(fpp3)
+library(feasts)
+```
+
+
+
+
+1.   Write a function to compute the mean and standard deviation of a time series, and apply it to the PBS data. Plot the series with the highest mean, and the series with the lowest standard deviation.
+
+Ans.   
+```{r}
+PBS %>%
+  features(Cost, list(mean = mean)) %>%
+  arrange(mean) -> mean_data
+tail(mean_data,1)->val
+PBS %>% filter(Concession=="Concessional",Type==as.character(val[1,2]), ATC1==as.character(val[1,3]), ATC2==as.character(val[1,4])) %>% autoplot(Cost)
+```
+
+```{r}
+PBS %>%
+  features(Cost, list(sd = sd)) %>%
+  arrange(sd) -> sd_data
+head(sd_data,1)->val
+PBS %>% filter(Concession=="Concessional",Type==as.character(val[1,2]), ATC1==as.character(val[1,3]), ATC2==as.character(val[1,4])) %>% autoplot(Cost)
+```
+
+2.  Use GGally::ggpairs() to look at the relationships between the STL-based features for the holiday series in the tourism data. Change seasonal_peak_year and seasonal_trough_year to factors, as shown in Figure 4.3. Which is the peak quarter for holidays in each state?
+
+```{r}
+#library(glue)
+
+tourism %>%
+  features(Trips, list(sd = sd)) %>%
+  arrange(sd)
+
+tourism_features <- tourism %>%
+  features(Trips, feature_set(pkgs = "feasts"))
+
+tourism_features %>%
+  select_at(vars(contains("season"), Purpose)) %>%
+  mutate(
+    seasonal_peak_year = seasonal_peak_year +
+      4*(seasonal_peak_year==0),
+    seasonal_trough_year = seasonal_trough_year +
+      4*(seasonal_trough_year==0),
+    seasonal_peak_year = glue("Q{seasonal_peak_year}"),
+    seasonal_trough_year = glue("Q{seasonal_trough_year}"),
+  ) %>%
+  GGally::ggpairs(mapping = aes(colour = Purpose))
+```
+
+
+
+3.   Use a feature-based approach to look for outlying series in the PBS data. What is unusual about the series you identify as “outliers.”
+
+Ans.  
+```{r}
+tourism %>% features(Trips, feature_set(pkgs = "feasts"))
+```
+
+
+
+```{r}
+PBS %>%
+  features(Cost, list(sd = sd)) %>%
+  arrange(sd)
+```
+
+```{r}
+tourism %>%
+  features(Trips, list(sd = sd)) %>%
+  arrange(sd)
+```
+
+
+
+
+
+
+
