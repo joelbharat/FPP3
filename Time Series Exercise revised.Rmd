@@ -1,0 +1,92 @@
+---
+title: "Time Series"
+author: "Joel"
+date: "21/11/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#Read libraries
+library(readxl)
+library(tsibble)
+library(tsibbledata)
+library(magrittr)
+library(GGally)
+library(ggplot2)
+library(tidyverse)
+library(fpp3)
+library(feasts)
+```
+
+
+```{r}
+myseries <- aus_retail %>%
+  filter(`Series ID` == sample(aus_retail$`Series ID`,1))
+```
+
+The Basic plots 
+```{r}
+myseries %>% autoplot(Turnover)
+myseries %>% gg_season(Turnover)
+myseries %>% gg_subseries(Turnover)
+myseries %>% gg_lag(Turnover)
+myseries %>% ACF(Turnover) %>% autoplot()
+```
+
+```{r}
+dstate <- myseries %>%
+  filter(State == "Queensland") %>%
+  mutate(diff = difference(Turnover))
+```
+
+Plotting of the ACF
+```{r}
+autoplot(dstate, diff)
+ACF(dstate, diff) %>% autoplot()
+
+```
+
+Plotting of the original and the transformed series
+```{r}
+myseries %>% autoplot(Turnover)
+myseries %>% autoplot(log(Turnover))
+```
+
+```{r}
+myseries%>%autoplot(Turnover)
+lambda <- myseries %>%
+  features(Turnover, features = guerrero) %>%
+  pull(lambda_guerrero)
+myseries %>%
+  autoplot(box_cox(Turnover, lambda)) +
+  labs(y = "",
+       title = paste0(
+         "Transformed production with $\\lambda$ = ",
+         round(lambda,2)))
+```
+Decomposition of the series
+```{r}
+myseries %>%
+  model(
+    classical_decomposition(Turnover, type = "multiplicative")
+  ) %>%
+  components() %>%
+  autoplot() +
+  labs(title = "Classical multiplicative decomposition of total Australian retail sales")
+
+x11_dcmp  <- myseries %>% 
+  model(x11 = X_13ARIMA_SEATS(Turnover ~ x11())) %>%
+  components()
+autoplot(x11_dcmp) +
+  labs(title =
+    "Decomposition of total Australian retail sales employment using X-11.")
+```
+
+```{r}
+
+```
+
